@@ -226,14 +226,7 @@ def invert_target(targets, calib, img_shape_2d, RGB_Map=None):
     objects_new = []
     corners3d = []
     for index, l in enumerate(predictions):
-        if l[0] == 0:
-            str = "Car"
-        elif l[0] == 1:
-            str = "Pedestrian"
-        elif l[0] == 2:
-            str = "Cyclist"
-        else:
-            str = "Ignore"
+        str = cnf.ID_TO_CLASS_NAME.get(int(l[0]), "Unknown")
         line = '%s -1 -1 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0' % str
 
         obj = kitti_data_utils.Object3d(line)
@@ -294,14 +287,7 @@ def predictions_to_kitti_format(img_detections, calib, img_shape_2d, img_size, R
     objects_new = []
     corners3d = []
     for index, l in enumerate(predictions):
-        if l[0] == 0:
-            str = "Car"
-        elif l[0] == 1:
-            str = "Pedestrian"
-        elif l[0] == 2:
-            str = "Cyclist"
-        else:
-            str = "Ignore"
+        str = cnf.ID_TO_CLASS_NAME.get(int(l[0]), "Unknown")
         line = '%s -1 -1 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0' % str
 
         obj = kitti_data_utils.Object3d(line)

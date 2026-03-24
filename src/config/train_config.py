@@ -136,6 +136,9 @@ def parse_train_configs():
     parser.add_argument('--iou-thresh', type=float, default=0.5,
                         help='for evaluation - the threshold for IoU')
 
+    parser.add_argument('--dataset_dir', type=str, required=True,
+                        help='The path to the dataset directory (e.g. /path/to/KITTI_ORIG or /path/to/KITTI_AUG)')
+
     configs = edict(vars(parser.parse_args()))
 
     ####################################################################
@@ -149,7 +152,6 @@ def parse_train_configs():
     ####################################################################
     ############## Dataset, logs, Checkpoints dir ######################
     ####################################################################
-    configs.dataset_dir = 'F:\Priya\KITTI\split_medium'
     configs.checkpoints_dir = os.path.join(configs.working_dir, 'checkpoints', configs.saved_fn)
     configs.logs_dir = os.path.join(configs.working_dir, 'logs', configs.saved_fn)
 

@@ -1,17 +1,21 @@
 import numpy as np
 
-class_list = ["Car","Van","Truck", "Pedestrian","Person_sitting" ,"Cyclist","Tram","Misc"]
+class_list = ["Animal", "Auto", "Bicycle", "Bus", "Car", "Motorcycle", "Pedestrian", "Tractor", "Truck"]
 
 CLASS_NAME_TO_ID = {
-    'Car': 0,
-    'Van': 1,
-    'Truck': 2,
-    'Pedestrian': 3,
-    'Person_sitting': 4,
-    'Cyclist':5,
-    'Tram':6,
-    'Misc':7
+    'Animal': 0,
+    'Auto': 1,
+    'Bicycle': 2,
+    'Bus': 3,
+    'Car': 4,
+    'Motorcycle': 5,
+    'Pedestrian': 6,
+    'Tractor': 7,
+    'Truck': 8
 }
+
+# Reverse mapping: ID to class name
+ID_TO_CLASS_NAME = {v: k for k, v in CLASS_NAME_TO_ID.items()}
 
 # Front side (of vehicle) Point Cloud boundary for BEV
 boundary = {
@@ -38,7 +42,18 @@ BEV_HEIGHT = 608  # across x axis 0m ~ 50m
 
 DISCRETIZATION = (boundary["maxX"] - boundary["minX"]) / BEV_HEIGHT
 
-colors = [[0, 255, 255], [0, 0, 255], [255, 0, 0]]
+# One unique color [B, G, R] per class (9 classes)
+colors = [
+    [0, 255, 255],    # Animal    - Yellow
+    [0, 165, 255],    # Auto      - Orange
+    [0, 255, 0],      # Bicycle   - Green
+    [255, 0, 0],      # Bus       - Blue
+    [0, 0, 255],      # Car       - Red
+    [255, 0, 255],    # Motorcycle - Magenta
+    [255, 255, 0],    # Pedestrian - Cyan
+    [0, 128, 255],    # Tractor   - Dark Orange
+    [128, 0, 128],    # Truck     - Purple
+]
 
 # Following parameters are calculated as an average from KITTI dataset for simplicity
 #####################################################################################

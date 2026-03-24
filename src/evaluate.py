@@ -107,6 +107,10 @@ def parse_eval_configs():
     configs.working_dir = '../'
     configs.dataset_dir = os.path.join(configs.working_dir, 'dataset', 'kitti')
 
+    # Allow overriding dataset_dir via command line
+    parser.add_argument('--dataset_dir', type=str, default=configs.dataset_dir,
+                        metavar='PATH', help='The path to the dataset directory')
+
     return configs
 
 

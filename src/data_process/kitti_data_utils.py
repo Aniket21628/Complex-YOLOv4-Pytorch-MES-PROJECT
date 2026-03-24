@@ -42,17 +42,16 @@ class Object3d(object):
         self.level = self.get_obj_level()
 
     def cls_type_to_id(self, cls_type):
-        # Car and Van ==> Car class
-        # Pedestrian and Person_Sitting ==> Pedestrian Class
         CLASS_NAME_TO_ID = {
-            'Car': 0,
-            'Van': 1,
-            'Truck': 2,
-            'Pedestrian': 3,
-            'Person_sitting': 4,
-            'Cyclist': 5,
-            'Tram': 6,
-            'Misc': 7
+            'Animal': 0,
+            'Auto': 1,
+            'Bicycle': 2,
+            'Bus': 3,
+            'Car': 4,
+            'Motorcycle': 5,
+            'Pedestrian': 6,
+            'Tractor': 7,
+            'Truck': 8
             }
         if cls_type not in CLASS_NAME_TO_ID.keys():
             return -1

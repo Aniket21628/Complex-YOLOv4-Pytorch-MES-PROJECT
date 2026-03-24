@@ -139,14 +139,23 @@ def build_yolo_target(labels):
 
 
 def inverse_yolo_target(targets, bc):
+    # Default heights (meters) for each class ID when converting back from BEV
+    CLASS_HEIGHTS = {
+        0: 1.0,   # Animal
+        1: 1.8,   # Auto
+        2: 1.5,   # Bicycle
+        3: 3.2,   # Bus
+        4: 1.5,   # Car
+        5: 1.5,   # Motorcycle
+        6: 1.8,   # Pedestrian
+        7: 2.5,   # Tractor
+        8: 3.0,   # Truck
+    }
     labels = []
     for t in targets:
         c, y, x, w, l, im, re = t
-        z, h = -1.55, 1.5
-        if c == 1:
-            h = 1.8
-        elif c == 2:
-            h = 1.4
+        z = -1.55
+        h = CLASS_HEIGHTS.get(int(c), 1.5)  # fallback to 1.5m
 
         y = y * (bc["maxY"] - bc["minY"]) + bc["minY"]
         x = x * (bc["maxX"] - bc["minX"]) + bc["minX"]

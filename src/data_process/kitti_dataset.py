@@ -48,8 +48,8 @@ class KittiDataset(Dataset):
 
         self.lidar_dir = os.path.join(self.dataset_dir, sub_folder, "velodyne")
         self.image_dir = os.path.join(self.dataset_dir, sub_folder, "image_2")
-        self.calib_dir = os.path.join(self.dataset_dir, sub_folder, "calib")
-        self.label_dir = os.path.join(self.dataset_dir, sub_folder, "label_2")
+        self.calib_dir = os.path.join(self.dataset_dir, sub_folder, "calib_padded")
+        self.label_dir = os.path.join(self.dataset_dir, sub_folder, "label_2_id")
         split_txt_path = os.path.join(self.dataset_dir, 'ImageSets', '{}.txt'.format(mode))
         self.image_idx_list = [x.strip() for x in open(split_txt_path).readlines()]
 
