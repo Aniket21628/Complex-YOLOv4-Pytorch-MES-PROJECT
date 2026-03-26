@@ -312,12 +312,12 @@ def read_label(label_filename):
 
     objects = []
     for line in lines:
-        if not line.strips():
+        if not line.strip():
             continue  # skip empty lines
         if line.startswith("DontCare"):
             continue  # skip DontCare completely
 
-        fields = line.strip.split(' ')
+        fields = line.strip().split(' ')
         if len(fields)<15:
             continue  # skip invalid lines
 
