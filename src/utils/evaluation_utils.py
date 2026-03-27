@@ -307,6 +307,14 @@ def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
         l_max_conf = max_conf[i, argwhere]
         l_max_id = max_id[i, argwhere]
 
+        MAX_DETECTIONS_BEFORE_NMS = 300
+        if l_box_array.shape[0] > MAX_DETECTIONS_BEFORE_NMS:
+            order = l_max_conf.argsort()[::-1][:MAX_DETECTIONS_BEFORE_NMS]
+            l_box_array = l_box_array[order]
+            l_obj_confs = l_obj_confs[order]
+            l_max_conf = l_max_conf[order]
+            l_max_id = l_max_id[order]
+
         keep = nms_cpu(l_box_array, l_max_conf, nms_thresh=nms_thresh)
 
         if (keep.size > 0):
@@ -336,6 +344,12 @@ def post_processing_v2(prediction, conf_thresh=0.95, nms_thresh=0.4):
         score = image_pred[:, 6] * image_pred[:, 7:].max(dim=1)[0]
         # Sort by it
         image_pred = image_pred[(-score).argsort()]
+        
+        # Limit predictions before NMS to prevent infinite or extremely long Shapely polygon intersection loops
+        MAX_DETECTIONS_BEFORE_NMS = 300
+        if image_pred.size(0) > MAX_DETECTIONS_BEFORE_NMS:
+            image_pred = image_pred[:MAX_DETECTIONS_BEFORE_NMS]
+
         class_confs, class_preds = image_pred[:, 7:].max(dim=1, keepdim=True)
         detections = torch.cat((image_pred[:, :7].float(), class_confs.float(), class_preds.float()), dim=1)
         # Perform non-maximum suppression

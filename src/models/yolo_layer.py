@@ -164,8 +164,10 @@ class YoloLayer(nn.Module):
         pred_h = prediction[..., 3]  # Height
         pred_im = prediction[..., 4]  # angle imaginary part
         pred_re = prediction[..., 5]  # angle real part
-        pred_conf = torch.sigmoid(prediction[..., 6])  # Conf
-        pred_cls = torch.sigmoid(prediction[..., 7:])  # Cls pred.
+        pred_conf_logits = prediction[..., 6]  # Conf logits
+        pred_cls_logits = prediction[..., 7:]  # Cls pred logits
+        pred_conf = torch.sigmoid(pred_conf_logits)  # Conf
+        pred_cls = torch.sigmoid(pred_cls_logits)  # Cls pred.
 
         # If grid size does not match current we compute new offsets
         if grid_size != self.grid_size:
@@ -196,19 +198,22 @@ class YoloLayer(nn.Module):
             iou_scores, giou_loss, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tim, tre, tcls, tconf = self.build_targets(
                 pred_boxes=pred_boxes, pred_cls=pred_cls, target=targets, anchors=self.scaled_anchors)
 
-            loss_x = F.mse_loss(pred_x[obj_mask], tx[obj_mask], reduction=self.reduction)
-            loss_y = F.mse_loss(pred_y[obj_mask], ty[obj_mask], reduction=self.reduction)
-            loss_w = F.mse_loss(pred_w[obj_mask], tw[obj_mask], reduction=self.reduction)
-            loss_h = F.mse_loss(pred_h[obj_mask], th[obj_mask], reduction=self.reduction)
-            loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
-            loss_re = F.mse_loss(pred_re[obj_mask], tre[obj_mask], reduction=self.reduction)
-            loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2)) ** 2  # as tim^2 + tre^2 = 1
-            loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
-            loss_eular = loss_im + loss_re + loss_im_re_red
+            if obj_mask.sum() > 0:
+                loss_x = F.mse_loss(pred_x[obj_mask], tx[obj_mask], reduction=self.reduction)
+                loss_y = F.mse_loss(pred_y[obj_mask], ty[obj_mask], reduction=self.reduction)
+                loss_w = F.mse_loss(pred_w[obj_mask], tw[obj_mask], reduction=self.reduction)
+                loss_h = F.mse_loss(pred_h[obj_mask], th[obj_mask], reduction=self.reduction)
+                loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
+                loss_re = F.mse_loss(pred_re[obj_mask], tre[obj_mask], reduction=self.reduction)
+                loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2 + 1e-6)) ** 2  # as tim^2 + tre^2 = 1
+                loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
+                loss_eular = loss_im + loss_re + loss_im_re_red
+                loss_cls = F.binary_cross_entropy_with_logits(pred_cls_logits[obj_mask], tcls[obj_mask], reduction=self.reduction)
+            else:
+                loss_x, loss_y, loss_w, loss_h, loss_eular, loss_cls, loss_im, loss_re = [torch.tensor(0., device=self.device)] * 8
 
-            loss_conf_obj = F.binary_cross_entropy(pred_conf[obj_mask], tconf[obj_mask], reduction=self.reduction)
-            loss_conf_noobj = F.binary_cross_entropy(pred_conf[noobj_mask], tconf[noobj_mask], reduction=self.reduction)
-            loss_cls = F.binary_cross_entropy(pred_cls[obj_mask], tcls[obj_mask], reduction=self.reduction)
+            loss_conf_obj = F.binary_cross_entropy_with_logits(pred_conf_logits[obj_mask], tconf[obj_mask], reduction=self.reduction) if obj_mask.sum() > 0 else torch.tensor(0., device=self.device)
+            loss_conf_noobj = F.binary_cross_entropy_with_logits(pred_conf_logits[noobj_mask], tconf[noobj_mask], reduction=self.reduction)
 
             if self.use_giou_loss:
                 loss_obj = loss_conf_obj + loss_conf_noobj
