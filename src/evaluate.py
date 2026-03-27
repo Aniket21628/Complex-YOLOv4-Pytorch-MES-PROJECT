@@ -58,8 +58,13 @@ def evaluate_mAP(val_loader, model, configs, logger):
             start_time = time.time()
 
         # Concatenate sample statistics
+        if len(sample_metrics) == 0:
+            return np.array([0.]), np.array([0.]), np.array([0.]), np.array([0.]), np.array([-1])
         true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
         precision, recall, AP, f1, ap_class = ap_per_class(true_positives, pred_scores, pred_labels, labels)
+
+        if len(precision) == 0:
+            return np.array([0.]), np.array([0.]), np.array([0.]), np.array([0.]), np.array([-1])
 
     return precision, recall, AP, f1, ap_class
 
