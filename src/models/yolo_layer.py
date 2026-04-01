@@ -121,9 +121,9 @@ class YoloLayer(nn.Module):
             # Coordinates
             tx[b, best_n, gj, gi] = gx - gx.floor()
             ty[b, best_n, gj, gi] = gy - gy.floor()
-            # Width and height
-            tw[b, best_n, gj, gi] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-            th[b, best_n, gj, gi] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
+            # Width and height (clamped to prevent extreme log values)
+            tw[b, best_n, gj, gi] = torch.log((gw / anchors[best_n][:, 0]).clamp(min=1e-6, max=1e6))
+            th[b, best_n, gj, gi] = torch.log((gh / anchors[best_n][:, 1]).clamp(min=1e-6, max=1e6))
             # Im and real part
             tim[b, best_n, gj, gi] = gim
             tre[b, best_n, gj, gi] = gre
@@ -205,7 +205,10 @@ class YoloLayer(nn.Module):
                 loss_h = F.mse_loss(pred_h[obj_mask], th[obj_mask], reduction=self.reduction)
                 loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
                 loss_re = F.mse_loss(pred_re[obj_mask], tre[obj_mask], reduction=self.reduction)
-                loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2 + 1e-6)) ** 2  # as tim^2 + tre^2 = 1
+                # Clamp pred values to prevent overflow in squared sum
+                pred_im_clamped = pred_im[obj_mask].clamp(-10., 10.)
+                pred_re_clamped = pred_re[obj_mask].clamp(-10., 10.)
+                loss_im_re = (1. - torch.sqrt(pred_im_clamped ** 2 + pred_re_clamped ** 2 + 1e-6)) ** 2
                 loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
                 loss_eular = loss_im + loss_re + loss_im_re_red
                 loss_cls = F.binary_cross_entropy_with_logits(pred_cls_logits[obj_mask], tcls[obj_mask], reduction=self.reduction)
@@ -223,9 +226,9 @@ class YoloLayer(nn.Module):
                 total_loss = loss_x + loss_y + loss_w + loss_h + loss_eular + loss_obj + loss_cls
 
                 # Metrics (store loss values using tensorboard)
-            cls_acc = 100 * class_mask[obj_mask].mean()
-            conf_obj = pred_conf[obj_mask].mean()
-            conf_noobj = pred_conf[noobj_mask].mean()
+            cls_acc = 100 * class_mask[obj_mask].mean() if obj_mask.sum() > 0 else torch.tensor(0.)
+            conf_obj = pred_conf[obj_mask].mean() if obj_mask.sum() > 0 else torch.tensor(0.)
+            conf_noobj = pred_conf[noobj_mask].mean() if noobj_mask.sum() > 0 else torch.tensor(0.)
             conf50 = (pred_conf > 0.5).float()
             iou50 = (iou_scores > 0.5).float()
             iou75 = (iou_scores > 0.75).float()

@@ -53,9 +53,17 @@ class Object3d(object):
             'Tractor': 7,
             'Truck': 8
             }
-        if cls_type not in CLASS_NAME_TO_ID.keys():
-            return -1
-        return CLASS_NAME_TO_ID[cls_type]
+        # First try string name lookup
+        if cls_type in CLASS_NAME_TO_ID:
+            return CLASS_NAME_TO_ID[cls_type]
+        # Then try numeric ID (labels may use "4" instead of "Car")
+        try:
+            numeric_id = int(cls_type)
+            if 0 <= numeric_id <= 8:
+                return numeric_id
+        except (ValueError, TypeError):
+            pass
+        return -1
 
     def get_obj_level(self):
         height = float(self.box2d[3]) - float(self.box2d[1]) + 1
