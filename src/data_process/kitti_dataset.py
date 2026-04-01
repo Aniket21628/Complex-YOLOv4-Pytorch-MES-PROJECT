@@ -238,11 +238,15 @@ class KittiDataset(Dataset):
     def collate_fn(self, batch):
         paths, imgs, targets = list(zip(*batch))
         # Remove empty placeholder targets
-        targets = [boxes for boxes in targets if boxes is not None]
-        # Add sample index to targets
-        for i, boxes in enumerate(targets):
-            boxes[:, 0] = i
-        targets = torch.cat(targets, 0)
+        targets = [boxes for boxes in targets if boxes is not None and boxes.numel() > 0]
+        if len(targets) == 0:
+            # All samples in this batch have no valid targets
+            targets = torch.zeros((0, 8))
+        else:
+            # Add sample index to targets
+            for i, boxes in enumerate(targets):
+                boxes[:, 0] = i
+            targets = torch.cat(targets, 0)
         # Selects new image size every tenth batch
         if (self.batch_count % 10 == 0) and self.multiscale and (not self.mosaic):
             self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))

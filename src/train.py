@@ -213,9 +213,18 @@ def train_one_epoch(train_dataloader, model, optimizer, lr_scheduler, epoch, con
         if (not configs.distributed) and (configs.gpu_idx is None):
             total_loss = torch.mean(total_loss)
 
+        # NaN/Inf guard: skip this batch to prevent corrupting all weights
+        if not torch.isfinite(total_loss):
+            print(f'[WARNING] Non-finite loss ({total_loss.item()}) at step {global_step}, skipping batch')
+            optimizer.zero_grad()
+            start_time = time.time()
+            continue
+
         # compute gradient and perform backpropagation
         total_loss.backward()
         if global_step % configs.subdivisions == 0:
+            # Clip gradients to prevent explosion
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
             optimizer.step()
             # Adjust learning rate
             if configs.step_lr_in_epoch:
